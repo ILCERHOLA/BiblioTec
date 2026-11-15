@@ -9,6 +9,9 @@
     <class>pe.bibliotec.model.Libro</class>
     <class>pe.bibliotec.model.Ejemplar</class>
     <class>pe.bibliotec.model.EstadoEjemplarConverter</class>
+    <class>pe.bibliotec.model.Usuario</class>
+    <class>pe.bibliotec.model.RolConverter</class>
+    <class>pe.bibliotec.model.EstadoUsuarioConverter</class>
     <properties>
       <property name="hibernate.hikari.maximumPoolSize" value="10"/>
       <property name="hibernate.hikari.minimumIdle" value="2"/>
