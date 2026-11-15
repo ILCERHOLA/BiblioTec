@@ -1,0 +1,3 @@
+db.url=jdbc:mysql://localhost:3306/bd_bibliotec?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Lima
+db.user=root
+db.password=CAMBIAR
