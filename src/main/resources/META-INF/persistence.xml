@@ -4,6 +4,11 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
              version="3.2">
   <persistence-unit name="bibliotecPU" transaction-type="RESOURCE_LOCAL">
+      <class>pe.bibliotec.model.Categoria</class>
+    <class>pe.bibliotec.model.Autor</class>
+    <class>pe.bibliotec.model.Libro</class>
+    <class>pe.bibliotec.model.Ejemplar</class>
+    <class>pe.bibliotec.model.EstadoEjemplarConverter</class>
     <properties>
       <property name="hibernate.hikari.maximumPoolSize" value="10"/>
       <property name="hibernate.hikari.minimumIdle" value="2"/>
