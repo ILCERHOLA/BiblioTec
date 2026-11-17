@@ -38,6 +38,14 @@
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
       <version>3.0.1</version>
     </dependency>
+    
+    <!-- Jakarta Pages (JSP): la provee Tomcat 10.1, solo se necesita para compilar -->
+    <dependency>
+      <groupId>jakarta.servlet.jsp</groupId>
+      <artifactId>jakarta.servlet.jsp-api</artifactId>
+      <version>3.1.1</version>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- Hibernate ORM (Jakarta Persistence) y pool HikariCP -->
     <dependency>

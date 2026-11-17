@@ -13,6 +13,7 @@
     <class>pe.bibliotec.model.RolConverter</class>
     <class>pe.bibliotec.model.EstadoUsuarioConverter</class>
     <properties>
+      <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
       <property name="hibernate.hikari.maximumPoolSize" value="10"/>
       <property name="hibernate.hikari.minimumIdle" value="2"/>
       <property name="hibernate.show_sql" value="true"/>
