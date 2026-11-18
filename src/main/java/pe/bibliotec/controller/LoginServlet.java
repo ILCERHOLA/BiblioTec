@@ -15,6 +15,7 @@ import pe.bibliotec.service.AuthService;
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
+	private static final long serialVersionUID = 1L;
     private final AuthService auth = new AuthService();
 
     @Override

@@ -12,6 +12,8 @@ import pe.bibliotec.service.CatalogoService;
 @WebServlet("/catalogo")
 public class CatalogoServlet extends HttpServlet {
 
+
+    private static final long serialVersionUID = 1L;
     private final CatalogoService servicio = new CatalogoService();
 
     @Override

@@ -144,7 +144,7 @@ CREATE TABLE prestamo (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- 9. MULTA - RN-05 (S/ 1.00 por día, tope S/ 25.00) y RN-06
+-- 9. MULTA - RN-05 (S/ 1.00 por día, tope S/ 60.00) y RN-06
 -- ---------------------------------------------------------------------
 CREATE TABLE multa (
   id_multa          INT           NOT NULL AUTO_INCREMENT,
@@ -155,7 +155,7 @@ CREATE TABLE multa (
   estado            ENUM('pendiente','pagada') NOT NULL DEFAULT 'pendiente',
   PRIMARY KEY (id_multa),
   UNIQUE KEY uq_multa_prestamo (id_prestamo),
-  CONSTRAINT ck_multa_monto CHECK (monto BETWEEN 0 AND 25.00),               -- RN-05
+  CONSTRAINT ck_multa_monto CHECK (monto BETWEEN 0 AND 60.00),               -- RN-05              
   CONSTRAINT fk_multa_prestamo FOREIGN KEY (id_prestamo)
     REFERENCES prestamo (id_prestamo) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
