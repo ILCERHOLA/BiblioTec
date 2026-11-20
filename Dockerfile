@@ -14,5 +14,6 @@ COPY --from=build /app/target/bibliotec.war /usr/local/tomcat/webapps/ROOT.war
 ENV CATALINA_OPTS="-Xms64m -Xmx300m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"
 
 EXPOSE 8080
-# Render indica el puerto en la variable PORT; si no existe se usa 8080
-CMD ["sh", "-c", "sed -i \"s/port=\\\"8080\\\"/port=\\\"${PORT:-8080}\\\"/\" /usr/local/tomcat/conf/server.xml && exec catalina.sh run"]
+# Render indica el puerto en la variable PORT; si no existe se usa 8080.
+# El puerto de apagado de Tomcat (8005) se desactiva (-1) para evitar avisos y accesos no deseados.
+CMD ["sh", "-c", "sed -i -e \"s/port=\\\"8080\\\"/port=\\\"${PORT:-8080}\\\"/\" -e 's/<Server port=\"8005\"/<Server port=\"-1\"/' /usr/local/tomcat/conf/server.xml && exec catalina.sh run"]
