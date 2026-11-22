@@ -48,6 +48,7 @@ public class Usuario {
     public String getClaveHash() { return claveHash; }
     public Rol getRol() { return rol; }
     public EstadoUsuario getEstado() { return estado; }
+    public void setEstado(EstadoUsuario estado) { this.estado = estado; }
 
     public String getNombreCompleto() {
         return nombres + " " + apellidos;

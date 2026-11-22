@@ -4,7 +4,7 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
              version="3.2">
   <persistence-unit name="bibliotecPU" transaction-type="RESOURCE_LOCAL">
-      <class>pe.bibliotec.model.Categoria</class>
+    <class>pe.bibliotec.model.Categoria</class>
     <class>pe.bibliotec.model.Autor</class>
     <class>pe.bibliotec.model.Libro</class>
     <class>pe.bibliotec.model.Ejemplar</class>
@@ -12,6 +12,10 @@
     <class>pe.bibliotec.model.Usuario</class>
     <class>pe.bibliotec.model.RolConverter</class>
     <class>pe.bibliotec.model.EstadoUsuarioConverter</class>
+    <class>pe.bibliotec.model.EstadoPrestamoConverter</class>
+    <class>pe.bibliotec.model.EstadoMultaConverter</class>
+    <class>pe.bibliotec.model.Prestamo</class>
+    <class>pe.bibliotec.model.Multa</class>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
       <property name="hibernate.hikari.maximumPoolSize" value="10"/>

@@ -9,17 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-  <nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-      <span class="navbar-brand">BiblioTec</span>
-      <form method="post" action="${pageContext.request.contextPath}/logout" class="d-flex align-items-center gap-3 m-0">
-        <span class="text-white-50 small">
-          <c:out value="${usuario.nombreCompleto}"/> · <c:out value="${usuario.rol}"/>
-        </span>
-        <button type="submit" class="btn btn-outline-light btn-sm">Salir</button>
-      </form>
-    </div>
-  </nav>
+  <jsp:include page="/WEB-INF/vistas/fragmentos/navbar.jsp"/>
 
   <main class="container py-4">
     <c:if test="${not usuario.activo}">
