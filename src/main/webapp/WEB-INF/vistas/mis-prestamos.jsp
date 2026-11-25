@@ -1,90 +1,103 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BiblioTec · Mis préstamos</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="${ctx}/assets/css/bibliotec.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-  <jsp:include page="/WEB-INF/vistas/fragmentos/navbar.jsp"/>
+<body>
+  <jsp:include page="/WEB-INF/vistas/fragmentos/cabecera.jsp"><jsp:param name="activo" value="prestamos"/></jsp:include>
+  <main class="contenedor">
+    <c:if test="${not empty mensaje}"><div class="aviso aviso-ok"><c:out value="${mensaje}"/></div></c:if>
+    <c:if test="${not empty error}"><div class="aviso aviso-error"><c:out value="${error}"/></div></c:if>
 
-  <main class="container py-4">
-    <c:if test="${not empty mensaje}">
-      <div class="alert alert-success"><c:out value="${mensaje}"/></div>
-    </c:if>
-    <c:if test="${not empty error}">
-      <div class="alert alert-danger"><c:out value="${error}"/></div>
-    </c:if>
-    <c:if test="${not usuario.activo}">
-      <div class="alert alert-warning">
-        Tu cuenta está suspendida por una multa pendiente. Acércate a la biblioteca para pagarla.
-      </div>
-    </c:if>
+    <h1 class="titulo">Mis préstamos</h1>
+    <p class="subtitulo">
+      <c:out value="${usuario.nombreCompleto}"/> · <c:out value="${usuario.rolEtiqueta}"/> ·
+      Límite: ${limite} préstamos simultáneos
+    </p>
 
-    <c:if test="${not empty multas}">
-      <h2 class="h5 mb-3">Multas pendientes</h2>
-      <ul class="list-group mb-4">
-        <c:forEach var="m" items="${multas}">
-          <li class="list-group-item d-flex justify-content-between">
-            <span><c:out value="${m.prestamo.ejemplar.libro.titulo}"/> · ${m.diasRetraso} día(s) de retraso</span>
-            <strong>S/ ${m.monto}</strong>
-          </li>
-        </c:forEach>
-      </ul>
-    </c:if>
-
-    <h1 class="h4 mb-3">Mis préstamos</h1>
-    <div class="table-responsive bg-white shadow-sm rounded">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+    <table class="tabla">
+      <thead>
+        <tr><th>Título</th><th>Prestado</th><th>Vence</th><th>Estado</th><th class="der">Acción</th></tr>
+      </thead>
+      <tbody>
+        <c:forEach var="p" items="${prestamos}">
           <tr>
-            <th>Libro</th>
-            <th>Prestado</th>
-            <th>Vence</th>
-            <th>Devuelto</th>
-            <th>Estado</th>
-            <th></th>
+            <td><c:out value="${p.ejemplar.libro.titulo}"/></td>
+            <td>${p.fechaPrestamoTexto}</td>
+            <td>${p.fechaVencimientoTexto}</td>
+            <td>
+              <c:choose>
+                <c:when test="${p.vencido}"><span class="est-vencido">Vencido</span></c:when>
+                <c:otherwise><span class="est-vigente">Vigente</span></c:otherwise>
+              </c:choose>
+            </td>
+            <td class="der">
+              <c:choose>
+                <c:when test="${p.vencido}">
+                  <a class="btn btn-naranja btn-chico" href="#multas">Ver multa</a>
+                </c:when>
+                <c:when test="${p.renovaciones == 0}">
+                  <form method="post" action="${ctx}/mis-prestamos">
+                    <input type="hidden" name="id" value="${p.id}">
+                    <button type="submit" class="btn btn-chico">Renovar</button>
+                  </form>
+                </c:when>
+                <c:otherwise><span class="subtitulo" style="margin:0">Ya renovado</span></c:otherwise>
+              </c:choose>
+            </td>
           </tr>
+        </c:forEach>
+        <c:if test="${empty prestamos}">
+          <tr><td colspan="5" style="text-align:center;color:#6b7488;padding:24px">No tienes préstamos activos.</td></tr>
+        </c:if>
+      </tbody>
+    </table>
+
+    <c:if test="${not empty reservas}">
+      <h2 class="subseccion">Mis reservas</h2>
+      <table class="tabla">
+        <thead>
+          <tr><th>Título</th><th>Ejemplar</th><th>Recoger hasta</th><th class="der">Acción</th></tr>
         </thead>
         <tbody>
-          <c:forEach var="p" items="${prestamos}">
+          <c:forEach var="r" items="${reservas}">
             <tr>
-              <td><c:out value="${p.ejemplar.libro.titulo}"/></td>
-              <td>${p.fechaPrestamo}</td>
-              <td>${p.fechaVencimiento}</td>
-              <td>${p.fechaDevolucion}</td>
-              <td>
-                <c:choose>
-                  <c:when test="${p.fechaDevolucion != null}">
-                    <span class="badge text-bg-secondary">Devuelto</span>
-                  </c:when>
-                  <c:when test="${p.vencido}">
-                    <span class="badge text-bg-danger">Vencido · ${p.diasRetraso} día(s)</span>
-                  </c:when>
-                  <c:otherwise>
-                    <span class="badge text-bg-success">Vigente</span>
-                  </c:otherwise>
-                </c:choose>
-              </td>
-              <td class="text-end">
-                <c:if test="${p.fechaDevolucion == null and not p.vencido and p.renovaciones == 0}">
-                  <form method="post" action="${pageContext.request.contextPath}/mis-prestamos" class="m-0">
-                    <input type="hidden" name="idPrestamo" value="${p.id}">
-                    <button type="submit" class="btn btn-outline-primary btn-sm">Renovar</button>
-                  </form>
-                </c:if>
+              <td><c:out value="${r.ejemplar.libro.titulo}"/></td>
+              <td><c:out value="${r.ejemplar.codigoBarras}"/></td>
+              <td>${r.limiteTexto}</td>
+              <td class="der">
+                <form method="post" action="${ctx}/mis-prestamos">
+                  <input type="hidden" name="accion" value="cancelarReserva">
+                  <input type="hidden" name="id" value="${r.id}">
+                  <button type="submit" class="btn btn-claro btn-chico">Cancelar</button>
+                </form>
               </td>
             </tr>
           </c:forEach>
-          <c:if test="${empty prestamos}">
-            <tr><td colspan="6" class="text-center text-muted py-4">Aún no tienes préstamos.</td></tr>
-          </c:if>
         </tbody>
       </table>
-    </div>
+    </c:if>
+
+    <c:if test="${not empty multas}">
+      <section class="multas" id="multas">
+        <h2>Multas pendientes</h2>
+        <div class="resumen">
+          ${multas.size()} ${multas.size() == 1 ? 'multa' : 'multas'} · ${multasDias} días de retraso ·
+          <strong>Total: S/ ${multasTotal}</strong>
+        </div>
+        <div class="detalle-multa">S/ 1.00 por día de retraso. Devuelve el libro y paga la multa en mostrador para reactivar tu cuenta.</div>
+      </section>
+    </c:if>
+
+    <div class="pie-acciones"><a class="btn" href="${ctx}/catalogo">Ir al catálogo</a></div>
   </main>
 </body>
 </html>

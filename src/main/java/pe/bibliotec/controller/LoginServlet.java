@@ -12,18 +12,19 @@ import jakarta.servlet.http.HttpSession;
 import pe.bibliotec.model.Usuario;
 import pe.bibliotec.service.AuthService;
 
+/** P1: inicio de sesion. Segun el rol redirige al catalogo (A) o al panel del bibliotecario (B). */
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private final AuthService auth = new AuthService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        HttpSession ses = req.getSession(false);
-        if (ses != null && ses.getAttribute("usuario") != null) {
-            resp.sendRedirect(req.getContextPath() + "/catalogo");
+        Usuario enSesion = Flash.usuario(req);
+        if (enSesion != null) {
+            resp.sendRedirect(req.getContextPath() + destino(enSesion));
             return;
         }
         req.getRequestDispatcher("/WEB-INF/vistas/login.jsp").forward(req, resp);
@@ -35,12 +36,21 @@ public class LoginServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         String codigo = req.getParameter("codigo");
         String clave = req.getParameter("clave");
+        String perfil = req.getParameter("perfil");
 
         Optional<Usuario> usuario = auth.autenticar(codigo, clave);
         if (usuario.isEmpty()) {
-            req.setAttribute("error", "Código o contraseña incorrectos.");
-            req.setAttribute("codigo", codigo);
-            req.getRequestDispatcher("/WEB-INF/vistas/login.jsp").forward(req, resp);
+            rechazar(req, resp, codigo, "Código o contraseña incorrectos.");
+            return;
+        }
+        // Cada boton de la pantalla solo admite el tipo de usuario que dice.
+        boolean personal = Flash.esPersonal(usuario.get());
+        if ("bibliotecario".equals(perfil) && !personal) {
+            rechazar(req, resp, codigo, "Esta cuenta no es de bibliotecario. Usa «Ingresar como estudiante».");
+            return;
+        }
+        if ("estudiante".equals(perfil) && personal) {
+            rechazar(req, resp, codigo, "Esta cuenta es de bibliotecario. Usa «Ingresar como bibliotecario».");
             return;
         }
 
@@ -51,6 +61,17 @@ public class LoginServlet extends HttpServlet {
         }
         HttpSession ses = req.getSession(true);
         ses.setAttribute("usuario", usuario.get());
-        resp.sendRedirect(req.getContextPath() + "/catalogo");
+        resp.sendRedirect(req.getContextPath() + destino(usuario.get()));
+    }
+
+    private static String destino(Usuario u) {
+        return Flash.esPersonal(u) ? "/prestamos" : "/catalogo";
+    }
+
+    private static void rechazar(HttpServletRequest req, HttpServletResponse resp, String codigo, String mensaje)
+            throws ServletException, IOException {
+        req.setAttribute("error", mensaje);
+        req.setAttribute("codigo", codigo);
+        req.getRequestDispatcher("/WEB-INF/vistas/login.jsp").forward(req, resp);
     }
 }

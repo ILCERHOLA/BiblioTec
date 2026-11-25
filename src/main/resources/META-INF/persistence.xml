@@ -16,6 +16,8 @@
     <class>pe.bibliotec.model.EstadoMultaConverter</class>
     <class>pe.bibliotec.model.Prestamo</class>
     <class>pe.bibliotec.model.Multa</class>
+    <class>pe.bibliotec.model.EstadoReservaConverter</class>
+    <class>pe.bibliotec.model.Reserva</class>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
       <property name="hibernate.hikari.maximumPoolSize" value="10"/>

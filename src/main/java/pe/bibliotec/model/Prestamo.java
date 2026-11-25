@@ -2,6 +2,7 @@ package pe.bibliotec.model;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
@@ -57,6 +58,7 @@ public class Prestamo {
     public Ejemplar getEjemplar() { return ejemplar; }
     public void setEjemplar(Ejemplar ejemplar) { this.ejemplar = ejemplar; }
     public Integer getIdReserva() { return idReserva; }
+    public void setIdReserva(Integer idReserva) { this.idReserva = idReserva; }
     public LocalDate getFechaPrestamo() { return fechaPrestamo; }
     public void setFechaPrestamo(LocalDate fechaPrestamo) { this.fechaPrestamo = fechaPrestamo; }
     public LocalDate getFechaVencimiento() { return fechaVencimiento; }
@@ -67,6 +69,16 @@ public class Prestamo {
     public void setRenovaciones(Integer renovaciones) { this.renovaciones = renovaciones; }
     public EstadoPrestamo getEstado() { return estado; }
     public void setEstado(EstadoPrestamo estado) { this.estado = estado; }
+
+    private static final DateTimeFormatter FORMATO = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    public String getFechaPrestamoTexto() { return texto(fechaPrestamo); }
+    public String getFechaVencimientoTexto() { return texto(fechaVencimiento); }
+    public String getFechaDevolucionTexto() { return texto(fechaDevolucion); }
+
+    private static String texto(LocalDate fecha) {
+        return fecha == null ? "" : FORMATO.format(fecha);
+    }
 
     private static LocalDate hoy() {
         return LocalDate.now(ZoneId.of("America/Lima"));

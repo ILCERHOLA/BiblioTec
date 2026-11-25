@@ -48,6 +48,12 @@ public class Usuario {
     public String getClaveHash() { return claveHash; }
     public Rol getRol() { return rol; }
     public EstadoUsuario getEstado() { return estado; }
+
+    /** Rol en formato legible: Estudiante, Docente, Bibliotecario... */
+    public String getRolEtiqueta() {
+        String nombre = rol.name();
+        return nombre.charAt(0) + nombre.substring(1).toLowerCase();
+    }
     public void setEstado(EstadoUsuario estado) { this.estado = estado; }
 
     public String getNombreCompleto() {

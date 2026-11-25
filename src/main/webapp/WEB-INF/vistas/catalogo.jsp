@@ -1,71 +1,70 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BiblioTec · Catálogo</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="${ctx}/assets/css/bibliotec.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-  <jsp:include page="/WEB-INF/vistas/fragmentos/navbar.jsp"/>
-
-  <main class="container py-4">
+<body>
+  <jsp:include page="/WEB-INF/vistas/fragmentos/cabecera.jsp"><jsp:param name="activo" value="catalogo"/></jsp:include>
+  <main class="contenedor">
+    <c:if test="${not empty mensaje}"><div class="aviso aviso-ok"><c:out value="${mensaje}"/></div></c:if>
+    <c:if test="${not empty error}"><div class="aviso aviso-error"><c:out value="${error}"/></div></c:if>
     <c:if test="${not usuario.activo}">
-      <div class="alert alert-warning">
+      <div class="aviso aviso-info">
         Tu cuenta está suspendida por una multa pendiente. Puedes consultar el catálogo,
         pero no solicitar préstamos hasta regularizarla.
       </div>
     </c:if>
 
-    <h1 class="h4 mb-3">Catálogo de libros</h1>
+    <h1 class="titulo">Catálogo de libros</h1>
+    <p class="subtitulo">Busca por título, autor o ISBN y elige un libro para ver su disponibilidad.</p>
 
-    <form method="get" action="${pageContext.request.contextPath}/catalogo" class="row g-2 mb-3">
-      <div class="col-sm-8 col-md-6">
-        <input type="search" class="form-control" name="q" placeholder="Buscar por título"
-               value="<c:out value='${q}'/>">
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Buscar</button>
-      </div>
-    </form>
+    <div class="filtros">
+      <form method="get" action="${ctx}/catalogo">
+        <div>
+          <label for="q">Buscar</label>
+          <input type="search" id="q" name="q" placeholder="Título, autor o ISBN" value="<c:out value='${q}'/>">
+        </div>
+        <div>
+          <label for="categoria">Categoría</label>
+          <select id="categoria" name="categoria" onchange="this.form.submit()">
+            <option value="">Todas</option>
+            <c:forEach var="cat" items="${categorias}">
+              <option value="${cat.id}" ${cat.id == categoriaSel ? 'selected' : ''}><c:out value="${cat.nombre}"/></option>
+            </c:forEach>
+          </select>
+        </div>
+      </form>
+    </div>
 
-    <div class="table-responsive bg-white shadow-sm rounded">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Título</th>
-            <th>Autores</th>
-            <th>Categoría</th>
-            <th class="text-center">Ejemplares</th>
-            <th class="text-center">Disponibilidad</th>
-          </tr>
-        </thead>
-        <tbody>
-          <c:forEach var="l" items="${libros}">
-            <tr>
-              <td><c:out value="${l.titulo}"/></td>
-              <td><c:out value="${l.autores}"/></td>
-              <td><c:out value="${l.categoria}"/></td>
-              <td class="text-center">${l.ejemplares}</td>
-              <td class="text-center">
-                <c:choose>
-                  <c:when test="${l.disponibles > 0}">
-                    <span class="badge text-bg-success">${l.disponibles} disponible(s)</span>
-                  </c:when>
-                  <c:otherwise>
-                    <span class="badge text-bg-secondary">No disponible</span>
-                  </c:otherwise>
-                </c:choose>
-              </td>
-            </tr>
-          </c:forEach>
-          <c:if test="${empty libros}">
-            <tr><td colspan="5" class="text-center text-muted py-4">No se encontraron libros.</td></tr>
-          </c:if>
-        </tbody>
-      </table>
+    <div class="rejilla">
+      <c:forEach var="l" items="${libros}">
+        <a class="tarjeta-libro" href="${ctx}/libro?id=${l.id}">
+          <div class="portada ${l.claseCubierta}"><c:out value="${l.titulo}"/></div>
+          <div class="cuerpo">
+            <div class="nombre"><c:out value="${l.titulo}"/></div>
+            <div class="autor"><c:out value="${l.autores}"/></div>
+            <c:choose>
+              <c:when test="${l.disponibles > 0}">
+                <div class="disp disp-si">Disponible: ${l.disponibles} ${l.disponibles == 1 ? 'ejemplar' : 'ejemplares'}</div>
+              </c:when>
+              <c:otherwise>
+                <div class="disp disp-no">Sin ejemplares disponibles</div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </a>
+      </c:forEach>
+      <c:if test="${empty libros}">
+        <p class="vacio">No se encontraron libros con ese criterio.</p>
+      </c:if>
     </div>
   </main>
 </body>

@@ -10,14 +10,18 @@ import java.util.function.Function;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import pe.bibliotec.dao.PrestamoDAO;
+import pe.bibliotec.dao.ReservaDAO;
 import pe.bibliotec.model.Ejemplar;
 import pe.bibliotec.model.EstadoEjemplar;
 import pe.bibliotec.model.EstadoMulta;
 import pe.bibliotec.model.EstadoPrestamo;
+import pe.bibliotec.model.EstadoReserva;
 import pe.bibliotec.model.EstadoUsuario;
 import pe.bibliotec.model.Multa;
 import pe.bibliotec.model.Prestamo;
+import pe.bibliotec.model.Reserva;
 import pe.bibliotec.model.Usuario;
+import pe.bibliotec.model.VerificacionPrestamo;
 import pe.bibliotec.util.JpaUtil;
 
 /** Casos de uso de prestamos: registrar, devolver, renovar y cobrar multas. */
@@ -26,6 +30,8 @@ public class PrestamoService {
     private static final ZoneId ZONA = ZoneId.of("America/Lima");
 
     private final PrestamoDAO dao = new PrestamoDAO();
+    private final ReservaDAO reservaDAO = new ReservaDAO();
+    private final ReservaService reservas = new ReservaService();
 
     public static LocalDate hoy() {
         return LocalDate.now(ZONA);
@@ -44,8 +50,17 @@ public class PrestamoService {
                     .orElseThrow(() -> new ReglaNegocioException(
                             "No existe un ejemplar con el codigo de barras " + codigoBarras.trim() + "."));
 
-            // RN-07: solo se presta un ejemplar disponible.
-            if (ejemplar.getEstado() != EstadoEjemplar.DISPONIBLE) {
+            // RN-09: las reservas vencidas liberan su ejemplar antes de decidir.
+            reservas.expirarVencidas(em);
+
+            // RN-07: solo se presta un ejemplar disponible, o uno reservado por el mismo usuario.
+            Reserva reserva = null;
+            if (ejemplar.getEstado() == EstadoEjemplar.RESERVADO) {
+                reserva = reservaDAO.activaDeEjemplar(em, ejemplar.getId())
+                        .filter(r -> r.getUsuario().getId().equals(usuario.getId()))
+                        .orElseThrow(() -> new ReglaNegocioException(
+                                "El ejemplar esta reservado por otro usuario."));
+            } else if (ejemplar.getEstado() != EstadoEjemplar.DISPONIBLE) {
                 throw new ReglaNegocioException(
                         "El ejemplar no esta disponible (estado: " + ejemplar.getEstado().getValor() + ").");
             }
@@ -69,6 +84,10 @@ public class PrestamoService {
             prestamo.setRenovaciones(0);
             prestamo.setEstado(EstadoPrestamo.VIGENTE);
             ejemplar.setEstado(EstadoEjemplar.PRESTADO);
+            if (reserva != null) {
+                reserva.setEstado(EstadoReserva.ATENDIDA);
+                prestamo.setIdReserva(reserva.getId());
+            }
             em.persist(prestamo);
             return prestamo;
         });
@@ -167,6 +186,86 @@ public class PrestamoService {
             }
             return null;
         });
+    }
+
+    /**
+     * Paso previo del panel del bibliotecario: comprueba las reglas de negocio sin registrar nada
+     * y devuelve el resumen que se muestra antes de confirmar.
+     */
+    public VerificacionPrestamo verificar(String codigoUsuario, String codigoBarras) {
+        if (vacio(codigoUsuario) || vacio(codigoBarras)) {
+            throw new ReglaNegocioException("Ingrese el codigo del usuario y el codigo de barras del ejemplar.");
+        }
+        return lectura(em -> {
+            Usuario usuario = dao.usuarioPorCodigo(em, codigoUsuario.trim())
+                    .orElseThrow(() -> new ReglaNegocioException(
+                            "No existe un usuario con el codigo " + codigoUsuario.trim() + "."));
+            Ejemplar ejemplar = em.createQuery(
+                    "select e from Ejemplar e join fetch e.libro where e.codigoBarras = :c", Ejemplar.class)
+                    .setParameter("c", codigoBarras.trim())
+                    .getResultStream()
+                    .findFirst()
+                    .orElseThrow(() -> new ReglaNegocioException(
+                            "No existe un ejemplar con el codigo de barras " + codigoBarras.trim() + "."));
+
+            int vigentes = (int) dao.contarPrestamosActivos(em, usuario.getId());
+            boolean multa = dao.tieneMultaPendiente(em, usuario.getId());
+            Optional<String> motivo = ReglasPrestamo.motivoRechazo(
+                    usuario.getRol(), usuario.getEstado(), multa, vigentes);
+
+            String problema = motivo.orElse(null);
+            if (problema == null && ejemplar.getEstado() == EstadoEjemplar.RESERVADO) {
+                boolean propia = reservaDAO.activaDeEjemplar(em, ejemplar.getId())
+                        .filter(r -> r.getUsuario().getId().equals(usuario.getId()))
+                        .isPresent();
+                if (!propia) {
+                    problema = "El ejemplar esta reservado por otro usuario.";
+                }
+            } else if (problema == null && ejemplar.getEstado() != EstadoEjemplar.DISPONIBLE) {
+                problema = "El ejemplar no esta disponible (estado: " + ejemplar.getEstado().getValor() + ").";
+            }
+            return new VerificacionPrestamo(
+                    usuario.getCodigo(), ejemplar.getCodigoBarras(), usuario.getNombreCompleto(),
+                    usuario.getRolEtiqueta(), vigentes, ReglasPrestamo.limitePrestamos(usuario.getRol()),
+                    !multa, ejemplar.getLibro().getTitulo(), ReglasPrestamo.diasPrestamo(usuario.getRol()),
+                    problema == null, problema);
+        });
+    }
+
+    /**
+     * Solicitud de prestamo desde el detalle del libro: usa el ejemplar que el usuario tenia reservado
+     * o, si no hay, el primero disponible, y aplica las mismas reglas que el mostrador.
+     */
+    public Prestamo solicitar(Integer idUsuario, Integer idLibro) {
+        String[] datos = lectura(em -> {
+            Usuario usuario = dao.usuarioPorId(em, idUsuario)
+                    .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado."));
+            String barras = reservaDAO.activasDeUsuario(em, idUsuario).stream()
+                    .filter(r -> r.getEjemplar().getLibro().getId().equals(idLibro))
+                    .map(r -> r.getEjemplar().getCodigoBarras())
+                    .findFirst()
+                    .orElseGet(() -> em.createQuery(
+                            "select e.codigoBarras from Ejemplar e "
+                          + "where e.libro.id = :l and e.estado = :d order by e.id", String.class)
+                            .setParameter("l", idLibro)
+                            .setParameter("d", EstadoEjemplar.DISPONIBLE)
+                            .setMaxResults(1)
+                            .getResultStream()
+                            .findFirst()
+                            .orElse(null));
+            return new String[] {usuario.getCodigo(), barras};
+        });
+        if (datos[1] == null) {
+            throw new ReglaNegocioException("No hay ejemplares disponibles de este libro.");
+        }
+        return registrar(datos[0], datos[1]);
+    }
+
+    /** Prestamos sin devolver del usuario (los devueltos no se muestran en Mis prestamos). */
+    public List<Prestamo> prestamosSinDevolverDeUsuario(Integer idUsuario) {
+        return lectura(em -> dao.deUsuario(em, idUsuario).stream()
+                .filter(p -> p.getFechaDevolucion() == null)
+                .toList());
     }
 
     // ---- Consultas para las vistas ----
