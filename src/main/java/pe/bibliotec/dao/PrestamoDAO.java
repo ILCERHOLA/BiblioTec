@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import pe.bibliotec.model.Ejemplar;
 import pe.bibliotec.model.EstadoMulta;
 import pe.bibliotec.model.Multa;
 import pe.bibliotec.model.Prestamo;
 import pe.bibliotec.model.Usuario;
+import pe.bibliotec.util.JpaUtil;
 
 /**
  * Consultas de prestamos y multas. Cada metodo recibe el EntityManager
@@ -33,7 +33,7 @@ public class PrestamoDAO {
     public Optional<Ejemplar> ejemplarPorCodigoBloqueado(EntityManager em, String codigoBarras) {
         return em.createQuery("select e from Ejemplar e where e.codigoBarras = :codigo", Ejemplar.class)
                 .setParameter("codigo", codigoBarras)
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setLockMode(JpaUtil.bloqueo())
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst();

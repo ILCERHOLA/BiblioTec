@@ -2,6 +2,7 @@ package pe.bibliotec.util;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.Persistence;
 
 import java.io.IOException;
@@ -68,6 +69,17 @@ public final class JpaUtil {
         propiedades.put("jakarta.persistence.jdbc.user", usuario);
         propiedades.put("jakarta.persistence.jdbc.password", clave);
         return propiedades;
+    }
+
+    /**
+     * Modo de bloqueo para las consultas que reservan filas (prestamo, devolucion, reserva).
+     * En MySQL se usa PESSIMISTIC_WRITE (SELECT ... FOR UPDATE). TiDB Cloud no admite la
+     * variante "FOR UPDATE OF alias" que genera Hibernate, asi que alli no se pide bloqueo.
+     */
+    public static LockModeType bloqueo() {
+        String url = valor("DB_URL", null);
+        boolean tidb = url != null && url.contains("tidbcloud");
+        return tidb ? LockModeType.NONE : LockModeType.PESSIMISTIC_WRITE;
     }
 
     private static String valor(String variableEntorno, String respaldo) {

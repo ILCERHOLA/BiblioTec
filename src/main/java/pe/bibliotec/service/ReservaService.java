@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import pe.bibliotec.dao.PrestamoDAO;
 import pe.bibliotec.dao.ReservaDAO;
 import pe.bibliotec.model.Ejemplar;
@@ -63,7 +62,7 @@ public class ReservaService {
 
     public void cancelar(Integer idReserva, Integer idUsuario) {
         enTransaccion(em -> {
-            Reserva reserva = em.find(Reserva.class, idReserva, LockModeType.PESSIMISTIC_WRITE);
+            Reserva reserva = em.find(Reserva.class, idReserva, JpaUtil.bloqueo());
             if (reserva == null || !reserva.getUsuario().getId().equals(idUsuario)) {
                 throw new ReglaNegocioException("La reserva no existe o no te pertenece.");
             }

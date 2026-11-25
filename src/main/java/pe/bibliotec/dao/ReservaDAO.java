@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import pe.bibliotec.model.Ejemplar;
 import pe.bibliotec.model.EstadoEjemplar;
 import pe.bibliotec.model.EstadoReserva;
 import pe.bibliotec.model.Reserva;
+import pe.bibliotec.util.JpaUtil;
 
 /** Consultas de reservas. Reciben el EntityManager para agruparse en una transaccion. */
 public class ReservaDAO {
@@ -21,7 +21,7 @@ public class ReservaDAO {
               + "where r.estado = :estado and r.fechaLimiteRecojo < :ahora", Reserva.class)
                 .setParameter("estado", EstadoReserva.ACTIVA)
                 .setParameter("ahora", ahora)
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setLockMode(JpaUtil.bloqueo())
                 .getResultList();
     }
 
@@ -62,7 +62,7 @@ public class ReservaDAO {
                 "select e from Ejemplar e where e.libro.id = :l and e.estado = :estado order by e.id", Ejemplar.class)
                 .setParameter("l", idLibro)
                 .setParameter("estado", EstadoEjemplar.DISPONIBLE)
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setLockMode(JpaUtil.bloqueo())
                 .setMaxResults(1)
                 .getResultStream()
                 .findFirst();

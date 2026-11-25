@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import pe.bibliotec.dao.PrestamoDAO;
 import pe.bibliotec.dao.ReservaDAO;
 import pe.bibliotec.model.Ejemplar;
@@ -99,7 +98,7 @@ public class PrestamoService {
      */
     public Optional<Multa> devolver(Integer idPrestamo) {
         return enTransaccion(em -> {
-            Prestamo prestamo = em.find(Prestamo.class, idPrestamo, LockModeType.PESSIMISTIC_WRITE);
+            Prestamo prestamo = em.find(Prestamo.class, idPrestamo, JpaUtil.bloqueo());
             if (prestamo == null) {
                 throw new ReglaNegocioException("El prestamo no existe.");
             }
@@ -145,7 +144,7 @@ public class PrestamoService {
     /** RF-07. Aplica RN-04: una renovacion y no si esta vencido. Solo el dueno del prestamo puede renovar. */
     public void renovar(Integer idPrestamo, Integer idUsuario) {
         enTransaccion(em -> {
-            Prestamo prestamo = em.find(Prestamo.class, idPrestamo, LockModeType.PESSIMISTIC_WRITE);
+            Prestamo prestamo = em.find(Prestamo.class, idPrestamo, JpaUtil.bloqueo());
             if (prestamo == null || !prestamo.getUsuario().getId().equals(idUsuario)) {
                 throw new ReglaNegocioException("El prestamo no existe o no te pertenece.");
             }
@@ -170,7 +169,7 @@ public class PrestamoService {
     /** RF-09. Marca la multa como pagada y, si no quedan otras, reactiva al usuario (RN-06). */
     public void pagarMulta(Integer idMulta) {
         enTransaccion(em -> {
-            Multa multa = em.find(Multa.class, idMulta, LockModeType.PESSIMISTIC_WRITE);
+            Multa multa = em.find(Multa.class, idMulta, JpaUtil.bloqueo());
             if (multa == null) {
                 throw new ReglaNegocioException("La multa no existe.");
             }
